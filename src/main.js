@@ -1,3 +1,6 @@
+//imports the camera scroll so it runs on main
+import LevelMapCamera from './Scenes/LevelMapCamera.js';
+
 // debug with extreme prejudice
 "use strict"
 

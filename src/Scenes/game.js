@@ -2,7 +2,7 @@ class Game extends Phaser.Scene {
     constructor() {
         super({ key: 'Game' });
 
-        this.chart = (config && config.chart) || "L - R - U - D";
+        this.chart = (this.config && config.chart) || "L - R - U - D";
     }
 
     init() {
@@ -19,10 +19,10 @@ class Game extends Phaser.Scene {
         this.badZone = 120;
 
         this.directions = [
-            { key: 'LEFT',  char: 'L', color: 0xff4444 },
-            { key: 'DOWN',  char: 'D', color: 0x44ff44 },
-            { key: 'UP',    char: 'U', color: 0x4444ff },
-            { key: 'RIGHT', char: 'R', color: 0xffff44 }
+            { key: 'LEFT',  char: 'L', color: 0xff4444 },   // red: left
+            { key: 'DOWN',  char: 'D', color: 0x44ff44 },   // green: down
+            { key: 'UP',    char: 'U', color: 0x4444ff },   // blue: up
+            { key: 'RIGHT', char: 'R', color: 0xffff44 }    // yellow: right
         ];
 
         this.line = this.add.line(
@@ -33,13 +33,13 @@ class Game extends Phaser.Scene {
         ).setOrigin(0, 0);
 
         this.add.rectangle(
-            this.hitZoneX, this.lineY, this.badZone, 480, 0xffaaaa, 0
+            this.hitZoneX, this.lineY, this.badZone, this.game.config.height, 0xffaaaa, 0
         ).setStrokeStyle(2, 0xffaaaa);
         this.add.rectangle(
-            this.hitZoneX, this.lineY, this.goodZone, 480, 0xffffaa, 0
+            this.hitZoneX, this.lineY, this.goodZone, this.game.config.height, 0xffffaa, 0
         ).setStrokeStyle(2, 0xffffaa);
         this.add.rectangle(
-            this.hitZoneX, this.lineY, this.perfectZone, 480, 0xaaffaa, 0
+            this.hitZoneX, this.lineY, this.perfectZone, this.game.config.height, 0xaaffaa, 0
         ).setStrokeStyle(2, 0xaaffaa);
 
 
@@ -66,7 +66,7 @@ class Game extends Phaser.Scene {
         this.input.keyboard.on('keydown', this.handleInput, this);
 
         this.feedback = this.add.text(
-            this.game.config.width / 2, this.lineY + 60, '',
+            this.game.config.width / 3, this.lineY + 60, '',
             { font: '24px Arial', fill: '#fff' }
         ).setOrigin(0.5);
     }
@@ -93,10 +93,13 @@ class Game extends Phaser.Scene {
                     this.notes.splice(i, 1);
 
                     if (dist <= this.perfectZone / 2) {
+                        console.log("perfect");
                         this.feedback.setText('perfect');
                     } else if (dist <= this.goodZone / 2) {
+                        console.log("good");
                         this.feedback.setText('good');
                     } else {
+                        console.log("bad");
                         this.feedback.setText('bad');
                     }
                     hit = true;
@@ -105,6 +108,7 @@ class Game extends Phaser.Scene {
             }
         }
         if (!hit) {
+            console.log("miss");
             this.feedback.setText('miss');
         }
     }
@@ -124,6 +128,7 @@ class Game extends Phaser.Scene {
                     note.active = false;
                     if (note.circle) note.circle.destroy();
                     this.notes.splice(i, 1);
+                    console.log("miss");
                     this.feedback.setText('miss');
                 }
             }

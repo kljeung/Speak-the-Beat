@@ -1,10 +1,9 @@
 //imports the camera scroll so it runs on main
 import LevelMapCamera from './Scenes/LevelMapCamera.js';
 
-// debug with extreme prejudice
+// debug
 "use strict"
 
-// game config
 let config = {
     parent: 'phaser-game',
     type: Phaser.CANVAS,
@@ -13,8 +12,8 @@ let config = {
     },
     width: 640,
     height: 480,
-    fps: { forceSetTimeOut: true, target: 60 },
-    scene: [Game],
+    fps: { forceSetTimeOut: true, target: 60},
+    scene: [Load, LevelMapCamera, Game, Face],
     backgroundColor: '#000000'
 }
 

@@ -5,14 +5,8 @@ export default class LevelMapCamera extends Phaser.Scene {
         this.scrollSpeed = 0.5; // adjust to change speed
     }
 
-    preload() {
-        this.load.setPath("./assets/");
-        this.load.tilemapTiledJSON("levelMap", "levelMap.json");
-        this.load.image("tiles", "tilemap_packed.png");
-    }
-
     create() {
-        //loads 2 copies of the same map, so they connect smoothly
+        // loads 2 copies of the same map, so they connect smoothly
         this.mapA = this.make.tilemap({ key: "levelMap" });
         this.mapB = this.make.tilemap({ key: "levelMap" });
 
@@ -32,7 +26,7 @@ export default class LevelMapCamera extends Phaser.Scene {
             layer.setDepth(-10);
         }
 
-        //could be used to stop background
+        // could be used to stop background
         this.events.on("stop-background", () => {
             this.scrollActive = false;
             for (let layer of [...this.layersA, ...this.layersB]) {
@@ -41,6 +35,8 @@ export default class LevelMapCamera extends Phaser.Scene {
         });
 
         this.mapWidth = this.mapA.widthInPixels;
+        this.scene.launch("Game");
+        this.scene.launch("Face");
     }
 
     createLayerSet(map, tileset, offsetX, offsetY) {
@@ -60,7 +56,7 @@ export default class LevelMapCamera extends Phaser.Scene {
         for (let layer of layers) {
             layer.x -= this.scrollSpeed;
 
-            //if the image fully exits left, the right image will follow
+            // if the image fully exits left, the right image will follow
             if (layer.x <= -this.mapWidth) {
                 layer.x += this.mapWidth * 2;
             }

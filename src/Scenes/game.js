@@ -2,7 +2,7 @@ class Game extends Phaser.Scene {
     constructor() {
         super({ key: 'Game' });
 
-        this.chart = (this.config && config.chart) || "L R - - U - D";
+        this.chart = (this.config && config.chart) || "900 - L R - 300 - L R";
     }
 
     init() {
@@ -12,17 +12,21 @@ class Game extends Phaser.Scene {
     create() {
         this.lineY = this.game.config.height / 2;
         this.hitZoneX = 375;
-        this.noteSpeed = 400;
+        this.noteSpeed = 500; // default speed
 
         this.perfectZone = 40;
         this.goodZone = 120;
         this.badZone = 960;
 
+        this.spriteSize = 0.5;
+
+        let spacing = 80;
+
         this.directions = [
-            { key: 'LEFT',  char: 'L', color: 0xff4444 },   // red: left
-            { key: 'DOWN',  char: 'D', color: 0x44ff44 },   // green: down
-            { key: 'UP',    char: 'U', color: 0x4444ff },   // blue: up
-            { key: 'RIGHT', char: 'R', color: 0xffff44 }    // yellow: right
+            { key: 'LEFT',  char: 'L', sprite: "flatDark_left", color: 0xff4444 },
+            { key: 'DOWN',  char: 'D', sprite: "flatDark_down", color: 0x44ff44 },
+            { key: 'UP',    char: 'U', sprite: "flatDark_up", color: 0x4444ff },
+            { key: 'RIGHT', char: 'R', sprite: "flatDark_right", color: 0xffff44 }
         ];
 
         this.line = this.add.line(
@@ -32,7 +36,6 @@ class Game extends Phaser.Scene {
             0xffffff
         ).setOrigin(0, 0);
 
-        //debugging
         /*
         this.add.rectangle(
             this.hitZoneX, this.lineY, this.badZone, this.game.config.height, 0xffaaaa, 0
@@ -51,10 +54,15 @@ class Game extends Phaser.Scene {
 
         this.notes = [];
         let chartArr = this.chart.split(/\s+/);
-        let spacing = 80;
         let startX = this.game.config.width - 50;
+        let currentSpeed = this.noteSpeed;
+
         chartArr.forEach((char, i) => {
             if (char === '-' || char === '') {
+                return;
+            }
+            if (!isNaN(parseFloat(char))) {
+                currentSpeed = parseFloat(char);
                 return;
             }
             let dir = this.directions.find(d => d.char === char.toUpperCase());
@@ -65,7 +73,8 @@ class Game extends Phaser.Scene {
                     dir: dir,
                     active: true,
                     enteredZone: false,
-                    circle: null
+                    speed: currentSpeed,
+                    sprite: null
                 });
             }
         });
@@ -75,6 +84,7 @@ class Game extends Phaser.Scene {
 
         this.input.keyboard.on('keydown', this.handleInput, this);
 
+        // text
         this.feedback = this.add.text(
             this.hitZoneX, this.game.config.height / 3, '',
             { font: '64px Arial', fill: '#fff' }
@@ -89,6 +99,8 @@ class Game extends Phaser.Scene {
             this.game.config.width / 2, this.game.config.height / 2 + 100, '',
             { font: '128px Arial', fill: '#fff' }
         ).setOrigin(0.5).setVisible(false);
+
+
     }
 
     handleInput(event) {
@@ -109,8 +121,8 @@ class Game extends Phaser.Scene {
             // Only allow hit if note is in the bad zone
             if (note.active && note.dir.key === key && dist <= this.badZone / 2) {
                 note.active = false;
-                if (note.circle) {
-                    note.circle.destroy();
+                if (note.sprite) {
+                    note.sprite.destroy();
                 }
                 this.notes.splice(i, 1);
 
@@ -147,23 +159,23 @@ class Game extends Phaser.Scene {
             return;
         }
 
-        let dt = this.noteSpeed * (delta / 1000);
         for (let i = this.notes.length - 1; i >= 0; i--) {
             let note = this.notes[i];
             if (note.active) {
+                let dt = note.speed * (delta / 1000);
                 note.x -= dt;
-                if (!note.circle) {
-                    note.circle = this.add.circle(note.x, note.y, 15, note.dir.color);
+                if (!note.sprite) {
+                    note.sprite = this.add.image(note.x, note.y, note.dir.sprite).setScale(this.spriteSize);
                 } else {
-                    note.circle.x = note.x;
+                    note.sprite.x = note.x;
                 }
                 if (!note.enteredZone && Math.abs(note.x - this.hitZoneX) <= this.badZone / 2) {
                     note.enteredZone = true;
                 }
                 if (note.enteredZone && Math.abs(note.x - this.hitZoneX) > this.badZone / 2 && note.x < this.hitZoneX) {
                     note.active = false;
-                    if (note.circle) {
-                        note.circle.destroy();
+                    if (note.sprite) {
+                        note.sprite.destroy();
                     }
                     this.notes.splice(i, 1);
                     this.feedback.setText('miss');

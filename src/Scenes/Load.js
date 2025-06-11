@@ -21,6 +21,7 @@ class Load extends Phaser.Scene {
         this.load.image("body_squircle", "yellow_body_squircle.png");
 
         // load basic emotes
+        this.load.image("text_bubble", "emote_.png");
         this.load.image("emote_alert", "emote_alert.png");
         this.load.image("emote_anger", "emote_anger.png");
         this.load.image("emote_dots3", "emote_dots3.png");

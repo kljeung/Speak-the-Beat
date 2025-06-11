@@ -2,7 +2,7 @@ class Game extends Phaser.Scene {
     constructor() {
         super({ key: 'Game' });
 
-        this.chart = (this.config && config.chart) || "900 - L R - 300 - L R";
+        this.chart = (this.config && config.chart) || "900 L R - 300 - L 500 R";
     }
 
     init() {

@@ -3,6 +3,7 @@ export default class LevelMapCamera extends Phaser.Scene {
         super("LevelMapCamera");
         this.scrollActive = true;
         this.scrollSpeed = 0.5; // adjust to change speed
+        this.scaleFactor = 1.9;
     }
 
     create() {
@@ -26,6 +27,8 @@ export default class LevelMapCamera extends Phaser.Scene {
             layer.setDepth(-10);
         }
 
+        this.mapWidth = this.mapA.widthInPixels * this.scaleFactor;
+
         // could be used to stop background
         this.events.on("stop-background", () => {
             this.scrollActive = false;
@@ -34,7 +37,6 @@ export default class LevelMapCamera extends Phaser.Scene {
             }
         });
 
-        this.mapWidth = this.mapA.widthInPixels;
         this.scene.launch("Game");
         this.scene.launch("Face");
     }
@@ -42,6 +44,10 @@ export default class LevelMapCamera extends Phaser.Scene {
     createLayerSet(map, tileset, offsetX, offsetY) {
         const groundLayer = map.createLayer("Ground", tileset, offsetX, offsetY);
         const decorLayer = map.createLayer("Decor", tileset, offsetX, offsetY);
+
+        groundLayer.setScale(this.scaleFactor);
+        decorLayer.setScale(this.scaleFactor);
+
         return [groundLayer, decorLayer];
     }
 

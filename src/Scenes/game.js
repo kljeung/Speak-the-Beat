@@ -2,21 +2,21 @@ class Game extends Phaser.Scene {
     constructor() {
         super({ key: 'Game' });
 
-        this.chart = (this.config && config.chart) || "L - R - U - D";
+        this.chart = (this.config && config.chart) || "L R - - U - D";
     }
 
     init() {
-        
+        this.gameOver = false;
     }
 
     create() {
         this.lineY = this.game.config.height / 2;
-        this.hitZoneX = 100;
-        this.noteSpeed = 200;
+        this.hitZoneX = 375;
+        this.noteSpeed = 400;
 
-        this.perfectZone = 20;
-        this.goodZone = 60;
-        this.badZone = 120;
+        this.perfectZone = 40;
+        this.goodZone = 120;
+        this.badZone = 960;
 
         this.directions = [
             { key: 'LEFT',  char: 'L', color: 0xff4444 },   // red: left
@@ -32,6 +32,8 @@ class Game extends Phaser.Scene {
             0xffffff
         ).setOrigin(0, 0);
 
+        //debugging
+        /*
         this.add.rectangle(
             this.hitZoneX, this.lineY, this.badZone, this.game.config.height, 0xffaaaa, 0
         ).setStrokeStyle(2, 0xffaaaa);
@@ -41,7 +43,11 @@ class Game extends Phaser.Scene {
         this.add.rectangle(
             this.hitZoneX, this.lineY, this.perfectZone, this.game.config.height, 0xaaffaa, 0
         ).setStrokeStyle(2, 0xaaffaa);
+        */
 
+        this.add.rectangle(
+            this.hitZoneX, this.lineY, this.perfectZone, this.game.config.height, 0xffffff, 0.5
+        ).setStrokeStyle(2, 0xffffff);
 
         this.notes = [];
         let chartArr = this.chart.split(/\s+/);
@@ -58,20 +64,37 @@ class Game extends Phaser.Scene {
                     y: this.lineY,
                     dir: dir,
                     active: true,
+                    enteredZone: false,
                     circle: null
                 });
             }
         });
 
+        this.totalNotes = this.notes.length;
+        this.score = 0;
+
         this.input.keyboard.on('keydown', this.handleInput, this);
 
         this.feedback = this.add.text(
-            this.game.config.width / 3, this.lineY + 60, '',
-            { font: '24px Arial', fill: '#fff' }
+            this.hitZoneX, this.game.config.height / 3, '',
+            { font: '64px Arial', fill: '#fff' }
         ).setOrigin(0.5);
+
+        this.ratingText = this.add.text(
+            this.game.config.width / 2, this.lineY + 120, '',
+            { font: '32px Arial', fill: '#fff' }
+        ).setOrigin(0.5).setVisible(false);
+
+        this.finalMessage = this.add.text(
+            this.game.config.width / 2, this.game.config.height / 2 + 100, '',
+            { font: '128px Arial', fill: '#fff' }
+        ).setOrigin(0.5).setVisible(false);
     }
 
     handleInput(event) {
+        if (this.gameOver) {
+            return;
+        }
         let key = event.key.replace('Arrow', '').toUpperCase();
         //console.log(event.code + " " + key);
         let dir = this.directions.find(d => d.key === key);
@@ -82,38 +105,48 @@ class Game extends Phaser.Scene {
         let hit = false;
         for (let i = 0; i < this.notes.length; i++) {
             let note = this.notes[i];
-            if (note.active && note.dir.key === key) {
-                let dist = Math.abs(note.x - this.hitZoneX);
-                if (dist <= this.badZone / 2) {
-                    note.active = false;
-                    if (note.circle) {
-                        note.circle.destroy();
-                    }
-
-                    this.notes.splice(i, 1);
-
-                    if (dist <= this.perfectZone / 2) {
-                        console.log("perfect");
-                        this.feedback.setText('perfect');
-                    } else if (dist <= this.goodZone / 2) {
-                        console.log("good");
-                        this.feedback.setText('good');
-                    } else {
-                        console.log("bad");
-                        this.feedback.setText('bad');
-                    }
-                    hit = true;
-                    break;
+            let dist = Math.abs(note.x - this.hitZoneX);
+            // Only allow hit if note is in the bad zone
+            if (note.active && note.dir.key === key && dist <= this.badZone / 2) {
+                note.active = false;
+                if (note.circle) {
+                    note.circle.destroy();
                 }
+                this.notes.splice(i, 1);
+
+                if (dist <= this.perfectZone / 2) {
+                    this.feedback.setText('perfect');
+                    this.score += 1;
+                } else if (dist <= this.goodZone / 2) {
+                    this.feedback.setText('good');
+                    this.score += 0.5;
+                } else {
+                    this.feedback.setText('bad');
+                }
+                hit = true;
+                break;
             }
         }
         if (!hit) {
-            console.log("miss");
             this.feedback.setText('miss');
         }
+        this.updateRating();
     }
 
     update(time, delta) {
+        if (this.notes.length === 0 && !this.gameOver) {
+            this.gameOver = true;
+            this.finalMessage.setPosition(this.game.config.width / 2, this.game.config.height / 2 - 50);
+            this.ratingText.setPosition(this.game.config.width / 2, this.game.config.height / 2 + 50);
+            
+            this.finalMessage.setText(`${this.letterGrade}`);
+
+            this.ratingText.setVisible(true);
+            this.finalMessage.setVisible(true);
+
+            return;
+        }
+
         let dt = this.noteSpeed * (delta / 1000);
         for (let i = this.notes.length - 1; i >= 0; i--) {
             let note = this.notes[i];
@@ -124,14 +157,50 @@ class Game extends Phaser.Scene {
                 } else {
                     note.circle.x = note.x;
                 }
-                if (note.x < 0) {
+                if (!note.enteredZone && Math.abs(note.x - this.hitZoneX) <= this.badZone / 2) {
+                    note.enteredZone = true;
+                }
+                if (note.enteredZone && Math.abs(note.x - this.hitZoneX) > this.badZone / 2 && note.x < this.hitZoneX) {
                     note.active = false;
-                    if (note.circle) note.circle.destroy();
+                    if (note.circle) {
+                        note.circle.destroy();
+                    }
                     this.notes.splice(i, 1);
-                    console.log("miss");
                     this.feedback.setText('miss');
+                    this.updateRating();
                 }
             }
         }
+    }
+
+    updateRating() {
+        let playedNotes = this.totalNotes - this.notes.length;
+        let accuracy = (playedNotes > 0) ? (this.score / playedNotes) * 100 : 0;
+        
+        let letterGrade = "F";
+        if (accuracy >= 97) {
+            letterGrade = "A+";
+        } else if (accuracy >= 93) {
+            letterGrade = "A";
+        } else if (accuracy >= 90) {
+            letterGrade = "A-";
+        } else if (accuracy >= 87) {
+            letterGrade = "B+";
+        } else if (accuracy >= 83) {
+            letterGrade = "B";
+        } else if (accuracy >= 80) {
+            letterGrade = "B-";
+        } else if (accuracy >= 77) {
+            letterGrade = "C+";
+        } else if (accuracy >= 73) {
+            letterGrade = "C";
+        } else if (accuracy >= 70) {
+            letterGrade = "C-";
+        } else if (accuracy >= 60) {
+            letterGrade = "D";
+        }
+
+        this.letterGrade = letterGrade;
+        this.ratingText.setText(`Accuracy: ${Math.round(accuracy)}% (${letterGrade}) [${this.score} / ${playedNotes}]`);
     }
 }

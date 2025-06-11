@@ -2,7 +2,17 @@ class Game extends Phaser.Scene {
     constructor() {
         super({ key: 'Game' });
 
-        this.chart = (this.config && config.chart) || "900 L R - 300 - L 500 R";
+        // build note track
+        // slash means it continues on the next line
+        // track with speed: 900 L R - 300 - L 500 R
+        this.chart = (this.config && config.chart) || "D U - - - - - - - - - D U D U - - R - - L - - R L R - L R - L R - L R \
+                                                        - - - - L - - L - - R - - R - - - - - - - D U D U D U D U - - - - - -\
+                                                        - - - - - - - - - - - - - - - - - L - U - U - L - -  - - - - - - - - - - R - - R - \
+                                                        R D - D - - - - - - - - - - - - - - - - - D R - L - - - - - - - - - -\
+                                                        R - U - D - D - D - U - U - - D - - D - - - - - - - - - - - - - - - D\
+                                                        D - - - D - U - U U - - R - - R L - - - - - - - - - - - - - - - - - -\
+                                                        - - - - - - - - - - - - - - - D - - - - - - - - - - - - - - - - - - -\
+                                                        - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - U - - - L";
     }
 
     init() {
@@ -10,6 +20,8 @@ class Game extends Phaser.Scene {
     }
 
     create() {
+        this.bgm = this.sound.add("bgm", {loop: true});
+        this.bgm.play();
         this.lineY = this.game.config.height / 2;
         this.hitZoneX = 375;
         this.noteSpeed = 500; // default speed
@@ -29,24 +41,21 @@ class Game extends Phaser.Scene {
             { key: 'RIGHT', char: 'R', sprite: "flatDark_right", color: 0xffff44 }
         ];
 
+        // add vfx
+        this.hit_vfx = this.add.particles(0, 0, "star_01", {
+            scale: {start: .1, end: .25},
+            maxAliveParticles: 1,
+            lifespan: 400,
+            alpha: {start: 1, end: 0.1}
+        });
+        this.hit_vfx.stop();
+        
         this.line = this.add.line(
             0, 0,
             0, this.lineY,
             this.game.config.width, this.lineY,
             0xffffff
         ).setOrigin(0, 0);
-
-        /*
-        this.add.rectangle(
-            this.hitZoneX, this.lineY, this.badZone, this.game.config.height, 0xffaaaa, 0
-        ).setStrokeStyle(2, 0xffaaaa);
-        this.add.rectangle(
-            this.hitZoneX, this.lineY, this.goodZone, this.game.config.height, 0xffffaa, 0
-        ).setStrokeStyle(2, 0xffffaa);
-        this.add.rectangle(
-            this.hitZoneX, this.lineY, this.perfectZone, this.game.config.height, 0xaaffaa, 0
-        ).setStrokeStyle(2, 0xaaffaa);
-        */
 
         this.add.rectangle(
             this.hitZoneX, this.lineY, this.perfectZone, this.game.config.height, 0xffffff, 0.5
@@ -90,6 +99,11 @@ class Game extends Phaser.Scene {
             { font: '64px Arial', fill: '#fff' }
         ).setOrigin(0.5);
 
+        this.comment = this.add.text(
+            this.game.config.width / 2, this.lineY + 120, '',
+            { font: '32px Arial', fill: '#fff' }
+        ).setOrigin(0.5).setVisible(false);
+
         this.ratingText = this.add.text(
             this.game.config.width / 2, this.lineY + 120, '',
             { font: '32px Arial', fill: '#fff' }
@@ -100,6 +114,12 @@ class Game extends Phaser.Scene {
             { font: '128px Arial', fill: '#fff' }
         ).setOrigin(0.5).setVisible(false);
 
+        // R to reset game
+        this.input.keyboard.on('keydown-R', () => {
+            this.bgm.destroy();   // uncomment once there is a bgm loaded
+            this.scene.start("LevelMapCamera");
+        }, this);
+
 
     }
 
@@ -108,7 +128,6 @@ class Game extends Phaser.Scene {
             return;
         }
         let key = event.key.replace('Arrow', '').toUpperCase();
-        //console.log(event.code + " " + key);
         let dir = this.directions.find(d => d.key === key);
         if (!dir) {
             return;
@@ -122,6 +141,7 @@ class Game extends Phaser.Scene {
             if (note.active && note.dir.key === key && dist <= this.badZone / 2) {
                 note.active = false;
                 if (note.sprite) {
+                    console.log("hit");
                     note.sprite.destroy();
                 }
                 this.notes.splice(i, 1);
@@ -150,9 +170,11 @@ class Game extends Phaser.Scene {
             this.gameOver = true;
             this.finalMessage.setPosition(this.game.config.width / 2, this.game.config.height / 2 - 50);
             this.ratingText.setPosition(this.game.config.width / 2, this.game.config.height / 2 + 50);
+            this.comment.setPosition(this.game.config.width / 2, this.ratingText.y+50);
             
             this.finalMessage.setText(`${this.letterGrade}`);
 
+            this.comment.setVisible(true);
             this.ratingText.setVisible(true);
             this.finalMessage.setVisible(true);
 
@@ -175,6 +197,7 @@ class Game extends Phaser.Scene {
                 if (note.enteredZone && Math.abs(note.x - this.hitZoneX) > this.badZone / 2 && note.x < this.hitZoneX) {
                     note.active = false;
                     if (note.sprite) {
+                        console.log("miss");
                         note.sprite.destroy();
                     }
                     this.notes.splice(i, 1);
@@ -190,29 +213,41 @@ class Game extends Phaser.Scene {
         let accuracy = (playedNotes > 0) ? (this.score / playedNotes) * 100 : 0;
         
         let letterGrade = "F";
+        let msg = "Disowned.";
         if (accuracy >= 97) {
             letterGrade = "A+";
+            msg = "Scholarly, unlike your grades!";
         } else if (accuracy >= 93) {
             letterGrade = "A";
+            msg = "Scholarly, unlike your grades!";
         } else if (accuracy >= 90) {
             letterGrade = "A-";
+            msg = "Scholarly, unlike your grades!";
         } else if (accuracy >= 87) {
             letterGrade = "B+";
+            msg = "You can do better than that.";
         } else if (accuracy >= 83) {
             letterGrade = "B";
+            msg = "You can do better than that.";
         } else if (accuracy >= 80) {
             letterGrade = "B-";
+            msg = "You can do better than that.";
         } else if (accuracy >= 77) {
             letterGrade = "C+";
+            msg = "Are you even trying?";
         } else if (accuracy >= 73) {
             letterGrade = "C";
+            msg = "Are you even trying?";
         } else if (accuracy >= 70) {
             letterGrade = "C-";
+            msg = "Are you even trying?";
         } else if (accuracy >= 60) {
             letterGrade = "D";
+            msg = "Disowned.";
         }
 
         this.letterGrade = letterGrade;
         this.ratingText.setText(`Accuracy: ${Math.round(accuracy)}% (${letterGrade}) [${this.score} / ${playedNotes}]`);
+        this.comment.setText(`${msg}`);
     }
 }

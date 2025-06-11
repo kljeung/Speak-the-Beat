@@ -16,7 +16,7 @@ class Load extends Phaser.Scene {
         // load faces
         this.load.image("face_happy", "face_a.png");
         this.load.image("face_mad", "face_b.png");
-        this.load.image("face_sad", "face_c.png");
+        this.load.image("face_sad", "face_k.png");
         this.load.image("body_circle", "yellow_body_circle.png");
         this.load.image("body_squircle", "yellow_body_squircle.png");
 
@@ -53,6 +53,12 @@ class Load extends Phaser.Scene {
         this.load.image("flatDark_volOn", "flatDark_volOn.png");
         this.load.image("flatDark_volOff", "flatDark_volOff.png");
 
+        // load vfx
+        this.load.image("star_01", "star_01.png");
+        this.load.image("star_02", "star_02.png");
+        this.load.image("star_03", "star_03.png");
+        this.load.image("star_04", "star_04.png");
+
         // load tilemap
         this.load.tilemapTiledJSON("levelMap", "levelMap.json");
         this.load.image("tiles", "tilemap_packed.png");
@@ -61,27 +67,29 @@ class Load extends Phaser.Scene {
         //this.load.bitmapFont("font", "font.png", "font.xml");
 
         // load audio once we have one
-        /*
-        this.load.audio("key", "path.mp3");
-        */
+        
+        this.load.audio("bgm", "ambience.mp3");
         
     }
 
     create() {
-        // load animations if we decide to use them
+        // load animations
+
+        // load particle animation
         /*
         this.anims.create({
-            key: 'key',
-            frames: [{key: "heart_1", frame: 0, duration: 1100},
-                     {key: "heart_2", frame: 0, duration: 600}],
-            repeat: -1
+            key: 'hit_anim',
+            frames: [{key: "star_04", frame: 0},
+                     {key: "star_01", frame: 0},
+                     {key: "star_02", frame: 0},
+                     {key: "star_03", frame: 0}]
         });
         */
 
          console.log("preload done");
          console.log("start game");
          
-         // start the game (can use to test the scene we are working on)
+         // start the game
          this.scene.start("LevelMapCamera");
     }
 }

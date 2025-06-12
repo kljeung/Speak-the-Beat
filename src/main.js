@@ -1,5 +1,3 @@
-//imports the camera scroll so it runs on main
-import LevelMapCamera from './Scenes/LevelMapCamera.js';
 
 // debug
 "use strict"
@@ -13,7 +11,7 @@ let config = {
     width: 1600,
     height: 900,
     fps: { forceSetTimeOut: true, target: 60},
-    scene: [Load, LevelMapCamera, Game, Face],
+    scene: [TitleScene, Load, LevelMapCamera, Game, Face, CreditScene],
     backgroundColor: '#000000'
 }
 
